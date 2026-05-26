@@ -46,69 +46,47 @@ class CalculadoraController extends Controller
                     'c' => 'required|numeric',
                 ]);
                 $resultado = $dados['c'] * $dados['b'] / $dados['a'];
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
-
+                break;
             case 'resto_da_divisao':
                 $dados = $request->validate([
                     'dividendo' => 'required|numeric',
                     'divisor' => 'required|numeric',
                 ]);
                 $resultado = fmod($dados['dividendo'], $dados['divisor']);
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             case 'porcentagem':
                 $dados = $request->validate([
                     'porcentagem' => 'required|numeric',
                     'valor' => 'required|numeric',
                 ]);
                 $resultado = $dados['porcentagem'] * $dados['valor'] / 100;
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             case 'area_circulo':
                 $dados = $request->validate([
                     'raio' => 'required|numeric',
                 ]);
                 $resultado = M_PI * pow($dados['raio'], 2);
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             case 'area_quadrado':
                 $dados = $request->validate([
                     'lado' => 'required|numeric',
                 ]);
                 $resultado = pow($dados['lado'], 2);
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             case 'area_retangulo':
                 $dados = $request->validate([
                     'base' => 'required|numeric',
                     'altura' => 'required|numeric',
                 ]);
                 $resultado = $dados['base'] * $dados['altura'];
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             case 'area_triangulo':
                 $dados = $request->validate([
                     'base' => 'required|numeric',
                     'altura' => 'required|numeric',
                 ]);
                 $resultado = ($dados['base'] * $dados['altura']) / 2;
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             case 'dias_entre_datas':
                 $dados = $request->validate([
                     'data_inicio' => 'required|date',
@@ -117,12 +95,15 @@ class CalculadoraController extends Controller
                 $data_inicio = new DateTime($dados['data_inicio']);
                 $data_fim = new DateTime($dados['data_fim']);
                 $resultado = $data_inicio->diff($data_fim)->days;
-                Calculo::create([
-                    'tipo' => $tipo,
-                ]);
-                return view($tipo, ['resultado' => $resultado]);
+                break;
             default:
                 abort(404);
         }
+
+        Calculo::create([
+            'tipo' => $tipo,
+        ]);
+
+        return view($tipo, ['resultado' => $resultado]);
     }
 }
