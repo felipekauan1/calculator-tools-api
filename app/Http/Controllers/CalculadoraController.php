@@ -29,7 +29,7 @@ class CalculadoraController extends Controller
             abort(404);
         }
 
-        return view($tipo);
+        return view('calculadoras.' . $tipo);
     }
 
     public function store(string $tipo, Request $request)
@@ -104,6 +104,6 @@ class CalculadoraController extends Controller
             'tipo' => $tipo,
         ]);
 
-        return view($tipo, ['resultado' => $resultado]);
+        return view('calculadoras.' . $tipo, ['resultado' => $resultado]);
     }
 }
