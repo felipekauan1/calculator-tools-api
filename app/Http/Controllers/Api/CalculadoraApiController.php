@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Calculo;
 use App\Services\CalculadoraService;
 
-class CalculadoraController extends Controller
+class CalculadoraApiController extends Controller
 {
     protected $service;
 
@@ -17,16 +18,10 @@ class CalculadoraController extends Controller
 
     public function index()
     {
-        return view('home', ['tipos' => $this->service::TIPOS]);
-    }
-
-    public function show(string $tipo)
-    {
-        if (!in_array($tipo, $this->service::TIPOS)) {
-            abort(404);
-        }
-
-        return view('calculadoras.' . $tipo);
+        return response()->json([
+            'sucesso' => true,
+            'tipos' => $this->service::TIPOS,
+        ]);
     }
 
     public function store(string $tipo, Request $request)
@@ -41,6 +36,10 @@ class CalculadoraController extends Controller
             'tipo' => $tipo,
         ]);
 
-        return view('calculadoras.' . $tipo, ['resultado' => $this->service->calcular($tipo, $dados)]);
+        return response()->json([
+            'sucesso' => true,
+            'dados' => $dados,
+            'resultado' => $this->service->calcular($tipo, $dados),
+        ]);
     }
 }
