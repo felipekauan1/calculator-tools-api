@@ -1,14 +1,14 @@
 # 🧮 Calculator Tools
 
-> Ferramenta de cálculos online — construída com Laravel 13 e MySQL.
+> Ferramenta de cálculos online com interface web e API REST — construída com Laravel 13 e MySQL.
 
 ![Demo GIF](docs/demo.gif)
 
 ## 📋 Sobre o projeto
 
-O **Calculator Tools** é uma ferramenta de cálculos online que permite realizar operações matemáticas, de áreas geométricas e de datas diretamente pelo navegador — sem necessidade de autenticação, assim como calculadoras online convencionais.
+O **Calculator Tools** é uma ferramenta de cálculos online que oferece dois modos de uso: uma interface web via Blade para uso direto no navegador e endpoints REST em JSON para integração com outros sistemas — sem necessidade de autenticação em ambos os casos.
 
-O projeto foi desenvolvido como portfólio para demonstrar conhecimentos em arquitetura MVC com Laravel, registro de métricas no banco de dados e boas práticas de desenvolvimento.
+O projeto foi desenvolvido como portfólio para demonstrar conhecimentos em arquitetura MVC com Laravel, separação de responsabilidades com Services, reutilização de lógica entre controllers e registro de métricas no banco de dados.
 
 ## ✨ Funcionalidades
 
@@ -46,19 +46,23 @@ O projeto foi desenvolvido como portfólio para demonstrar conhecimentos em arqu
 app/
 ├── Http/
 │   └── Controllers/
-│       └── CalculadoraController.php   # Lógica de todos os cálculos
-└── Models/
-    └── Calculo.php                     # Model para registro de métricas
+│       ├── CalculadoraController.php        # Controller web (Blade)
+│       └── Api/
+│           └── CalculadoraApiController.php # Controller API (JSON)
+├── Models/
+│   └── Calculo.php                          # Model para registro de métricas
+└── Services/
+    └── CalculadoraService.php               # Lógica e regras de validação
 
 database/
 └── migrations/
-    └── create_calculos_table.php       # Tabela com enum de tipos
+    └── create_calculos_table.php            # Tabela com enum de tipos
 
 resources/views/
 ├── layouts/
-│   └── app.blade.php                   # Layout base
+│   └── app.blade.php                        # Layout base
 ├── calculadoras/
-│   ├── _errors.blade.php               # Partial de erros reutilizável
+│   ├── _errors.blade.php                    # Partial de erros reutilizável
 │   ├── porcentagem.blade.php
 │   ├── regra_tres_simples.blade.php
 │   ├── resto_da_divisao.blade.php
@@ -70,15 +74,20 @@ resources/views/
 └── home.blade.php
 
 routes/
-└── web.php                             # 3 rotas
+├── web.php                                  # Rotas da interface Blade
+└── api.php                                  # Rotas da API REST
 ```
 
-**Fluxo de uma requisição:**
-
+**Fluxo de uma requisição web:**
 ```
-GET /calculadoras/{tipo} → Controller exibe formulário → Blade renderiza view
+GET /calculadoras/{tipo} → CalculadoraController → Blade renderiza view
 
-POST /calculadoras/{tipo} → Controller processa cálculo → Registra no banco → Retorna resultado
+POST /calculadoras/{tipo} → CalculadoraController → CalculadoraService → Registra no banco → Retorna resultado
+```
+
+**Fluxo de uma requisição API:**
+```
+POST /api/calculadoras/{tipo} → CalculadoraApiController → CalculadoraService → Retorna JSON
 ```
 
 ## 🗄️ Estrutura do banco de dados
@@ -96,17 +105,20 @@ A tabela `calculos` registra cada operação realizada — permitindo análise d
 
 ## 🧠 Decisões técnicas
 
+### Por que um CalculadoraService?
+A lógica dos cálculos e as regras de validação vivem no Service, permitindo que tanto o controller web (Blade) quanto o controller da API (JSON) a reutilizem sem duplicação de código. Isso segue o princípio DRY (Don't Repeat Yourself).
+
 ### Por que sem autenticação?
 A ferramenta é pública — qualquer pessoa pode calcular sem criar conta, assim como calculadoras online convencionais. Autenticação adicionaria complexidade desnecessária para esse caso de uso.
 
 ### Por que salvar no banco sem histórico por usuário?
-O objetivo não é exibir histórico por usuário, mas registrar métricas de uso da ferramenta — quais calculadoras são mais acessadas e em quais dias. Isso permite análise de comportamento sem expor dados de usuários.
+O objetivo não é exibir histórico por usuário, mas registrar métricas de uso — quais calculadoras são mais acessadas e em quais dias. Isso permite análise de comportamento sem expor dados de usuários.
 
 ### Por que switch em vez de classes separadas?
 Para 8 operações simples, a legibilidade do `switch` supera a complexidade de criar uma classe por calculadora. Em um projeto maior, o padrão **Strategy** seria mais adequado — cada operação teria sua própria classe com uma interface comum.
 
 ### Por que partial `_errors.blade.php`?
-Em vez de repetir o bloco de erros em todas as views, ele foi extraído para um partial reutilizável. Isso segue o princípio DRY (Don't Repeat Yourself) — uma mudança no estilo dos erros afeta todas as calculadoras de uma vez.
+Em vez de repetir o bloco de erros em todas as views, ele foi extraído para um partial reutilizável — uma mudança no estilo dos erros afeta todas as calculadoras de uma vez.
 
 ## 🚀 Como rodar localmente
 
@@ -147,7 +159,7 @@ php artisan serve
 
 Acesse `http://localhost:8000/calculadoras` no navegador.
 
-## 🔀 Rotas
+## 🔀 Rotas Web (Blade)
 
 | Método | URL | Descrição |
 |---|---|---|
@@ -155,12 +167,119 @@ Acesse `http://localhost:8000/calculadoras` no navegador.
 | `GET` | `/calculadoras/{tipo}` | Exibe o formulário de uma calculadora |
 | `POST` | `/calculadoras/{tipo}` | Processa o cálculo e retorna o resultado |
 
+## 📡 API REST
+
+**Base URL:** `http://localhost:8000/api`
+
+A API é pública e não requer autenticação. Todas as respostas são em JSON.
+
+### Listar calculadoras disponíveis
+```
+GET /api/calculadoras
+```
+
+**Resposta (200):**
+```json
+{
+    "sucesso": true,
+    "tipos": [
+        "porcentagem",
+        "regra_tres_simples",
+        "resto_da_divisao",
+        "area_circulo",
+        "area_quadrado",
+        "area_retangulo",
+        "area_triangulo",
+        "dias_entre_datas"
+    ]
+}
+```
+
+### Realizar um cálculo
+```
+POST /api/calculadoras/{tipo}
+Content-Type: application/json
+```
+
+**Parâmetros por tipo:**
+
+**porcentagem**
+```json
+{ "porcentagem": 5, "valor": 200 }
+```
+
+**regra_tres_simples**
+```json
+{ "a": 10, "b": 50, "c": 3 }
+```
+
+**resto_da_divisao**
+```json
+{ "dividendo": 17, "divisor": 5 }
+```
+
+**area_circulo**
+```json
+{ "raio": 7 }
+```
+
+**area_quadrado**
+```json
+{ "lado": 5 }
+```
+
+**area_retangulo**
+```json
+{ "base": 8, "altura": 5 }
+```
+
+**area_triangulo**
+```json
+{ "base": 6, "altura": 4 }
+```
+
+**dias_entre_datas**
+```json
+{ "data_inicio": "2024-01-01", "data_fim": "2024-12-31" }
+```
+
+**Resposta de sucesso (200):**
+```json
+{
+    "sucesso": true,
+    "dados": {
+        "porcentagem": "5",
+        "valor": "200"
+    },
+    "resultado": 10
+}
+```
+
+**Erro de validação (422):**
+```json
+{
+    "message": "The porcentagem field is required.",
+    "errors": {
+        "porcentagem": ["The porcentagem field is required."]
+    }
+}
+```
+
+**Tipo inválido (404):**
+```json
+{
+    "message": "Not Found"
+}
+```
+
 ## 📸 Screenshots
 
 ![Demo GIF](docs/resto_da_divisao.gif)
 
 ## 📌 Possíveis melhorias futuras
 
+- Histórico de cálculos por sessão do usuário
+- Dashboard de métricas com gráfico de uso por calculadora
 - Novas calculadoras: IMC, juros compostos, conversão de unidades
 - Testes automatizados com PHPUnit
 - Padrão Strategy para organizar as operações em classes separadas
